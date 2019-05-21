@@ -1,0 +1,20 @@
+<!-- 启动所有语音节点的launch file-->
+<launch>
+	<arg name="dict" default="$(find homework)/6534.dic" />
+	<arg name="kws"  default="$(find homework)/6534.kwlist" />
+
+	<include file="$(find pocketsphinx)/launch/kws.launch">
+		<arg name="dict" value="$(arg dict)" />
+		<arg name="kws"  value="$(arg kws)" />
+	</include>
+
+	<!-- 启动截取音频的节点-->
+	<!--<node pkg="kamerider_speech" type="get_audio.py" name="get_audio" launch-prefix="xterm -e" />-->
+	
+	<!-- 启动科大讯飞识别节点	-->
+<!--
+	<node pkg="kamerider_speech" type="speech_recognition_fast.py" name="speech_recognition" launch-prefix="xterm -e" respawn="true" respawn_delay="1" />
+
+	<node pkg="sound_play" type="soundplay_node.py" name="sound_play" launch-prefix="xterm -e" />
+-->
+</launch>
