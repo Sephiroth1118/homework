@@ -8,3 +8,5 @@
 
 //自定义消息类型
 #include<homework/location.h>
+
+using namespace std;
