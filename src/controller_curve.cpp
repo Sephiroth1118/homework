@@ -55,6 +55,19 @@ double wr = vr * target_curvature;
 //计算出的应发布的速度
 geometry_msgs::Twist Vel;
 
+
+//初始化
+void init()
+{
+    Vel.linear.x = 0;
+    Vel.linear.y = 0;
+    Vel.linear.z = 0;
+    Vel.angular.x = 0;
+    Vel.angular.y = 0;
+    Vel.angular.z = 0;
+
+}
+
 void InputCallback(const homework::location::ConstPtr& msg)
 {
     //@TODO
@@ -124,6 +137,8 @@ int main(int argc, char **argv)
     sub_odom_data = nh.subscribe("sensor_fusions/odom", 1 , OdomCallback);
 
     ROS_INFO("Start controlling!");
+
+    init();
 
     while(ros::ok())
     {
