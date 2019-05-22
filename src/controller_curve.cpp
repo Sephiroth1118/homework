@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        Vel.linear.y = v;
+        Vel.linear.x = v;
         Vel.angular.z = w;
 
         pub_twist_data.publish(Vel);
