@@ -35,6 +35,7 @@ const int step = 4;   //贝塞尔曲线阶数
 int start = 0;          //曲线开始点的位置
 int ending = start + step;//曲线结束点的位置
 vector<geometry_msgs::Pose> path_pose; //地图数据坐标
+//vector<geometry_msgs::Pose> besier_pose; //曲线上的点
 geometry_msgs::Pose final_pose; //地图上终点的坐标
 geometry_msgs::Pose cur_pose;   //机器人当前坐标
 
@@ -42,6 +43,10 @@ geometry_msgs::Pose cur_pose;   //机器人当前坐标
 double x_des = 0;
 double y_des = 0;
 double theta_des = 0;
+
+//曲线的曲率
+double curvature = 0;
+
 
 //定义发布器和订阅器
 ros::Publisher pub_data;    //发布生成的贝塞尔曲线中的数据
@@ -220,6 +225,7 @@ double BasierCurve()
         x_des = final_pose.position.x;
         y_des = final_pose.position.y;
         theta_des = Trans(final_pose);
+        curvature = 0;
     }
     else if(ending - start == 1)            //用一阶贝塞尔曲线
     {
@@ -228,7 +234,7 @@ double BasierCurve()
         double s_d = MAXNUM;
         double s_t = 0;                     //距离最近的点的t值
         //分别从0-1等间隔取10个数作为t
-        for(int t = 0; t <= 1; t+=0.1)
+        for(double t = 0; t <= 1; t+=0.1)
         {
             x = (1 - t) * path_pose[start].position.x + t * path_pose[ending].position.x;
             y = (1 - t) * path_pose[start].position.y + t * path_pose[ending].position.y;
@@ -243,6 +249,7 @@ double BasierCurve()
         }
 
         theta_des = atan2(path_pose[ending].position.y - path_pose[start].position.y, path_pose[ending].position.x - path_pose[start].position.x);
+        curvature = 0;
     }
 
     else if(ending - start == 2)            //用二阶贝塞尔曲线
@@ -251,7 +258,7 @@ double BasierCurve()
         double y = 0;
         double s_d = MAXNUM;
         double s_t = 0;
-        for(int t = 0; t <= 1; t += 0.1)
+        for(double t = 0; t <= 1; t += 0.1)
         {
             x = (1 - t)*(1 - t)*path_pose[start].position.x + 2*(1-t)*t*path_pose[start+1].position.x + t*t*path_pose[ending].position.x;
             y = (1 - t)*(1 - t)*path_pose[start].position.y + 2*(1-t)*t*path_pose[start+1].position.y + t*t*path_pose[ending].position.y;
@@ -265,13 +272,37 @@ double BasierCurve()
             }
         }
         if(s_t == 1)
-        {
-            theta_des = atan2(path_pose[s_t].position.y - path_pose[s_t-0.1].position.y, path_pose[s_t].position.x - path_pose[s_t - 0.1].position.x);
+        {   
+            double t =0.9;
+            double tmp_x = (1 - t)*(1 - t)*path_pose[start].position.x + 2*(1-t)*t*path_pose[start+1].position.x + t*t*path_pose[ending].position.x;
+            double tmp_y = (1 - t)*(1 - t)*path_pose[start].position.y + 2*(1-t)*t*path_pose[start+1].position.y + t*t*path_pose[ending].position.y;
+            theta_des = atan2(y_des - tmp_y, x_des - tmp_x);
+            curvature = 0;
         }
         else
-        {
-            theta_des = atan2(path_pose[s_t+0.1].position.y - path_pose[s_t].position.y, path_pose[s_t+0.1].position.x - path_pose[s_t].position.x);
-                        
+        {   
+            if(s_t == 0.9)
+            {
+                double t = 1;
+                double tmp_x = (1 - t)*(1 - t)*path_pose[start].position.x + 2*(1-t)*t*path_pose[start+1].position.x + t*t*path_pose[ending].position.x;
+                double tmp_y = (1 - t)*(1 - t)*path_pose[start].position.y + 2*(1-t)*t*path_pose[start+1].position.y + t*t*path_pose[ending].position.y;
+                theta_des = atan2(y_des - tmp_y, x_des - tmp_x);
+                curvature = 0;
+            }
+            else
+            {
+                double t = s_t+0.1;
+                double tmp_x1 = (1 - t)*(1 - t)*path_pose[start].position.x + 2*(1-t)*t*path_pose[start+1].position.x + t*t*path_pose[ending].position.x;
+                double tmp_y1 = (1 - t)*(1 - t)*path_pose[start].position.y + 2*(1-t)*t*path_pose[start+1].position.y + t*t*path_pose[ending].position.y;
+                t = t + 0.2;
+                double tmp_x2 = (1 - t)*(1 - t)*path_pose[start].position.x + 2*(1-t)*t*path_pose[start+1].position.x + t*t*path_pose[ending].position.x;
+                double tmp_y2 = (1 - t)*(1 - t)*path_pose[start].position.y + 2*(1-t)*t*path_pose[start+1].position.y + t*t*path_pose[ending].position.y;
+                theta_des = atan2(tmp_y1 - y_des,tmp_x1 - x_des);
+                double theta_tmp = atan2(tmp_y2 - tmp_y1,tmp_x2 - tmp_x1);
+                curvature = (theta_tmp - theta_des)/fabs(sqrt(pow(x_des,2)+pow(y_des,2)) - sqrt(pow(tmp_x1,2)+pow(tmp_y1,2)));
+            }
+            
+            
         }
         
     }
@@ -281,7 +312,7 @@ double BasierCurve()
         double y = 0;
         double s_d = MAXNUM;
         double s_t = 0;
-        for(int t = 0; t <= 1; t += 0.1)
+        for(double t = 0; t <= 1; t += 0.1)
         {
             x = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
             y = pow(1-t,3)*path_pose[start].position.y + 3*(1-t)*(1-t)*t*path_pose[start+1].position.y + 3*(1-t)*t*t*path_pose[start+2].position.y +t*t*t*path_pose[ending].position.y;
@@ -296,11 +327,34 @@ double BasierCurve()
         }
         if(s_t == 1)
         {
-            theta_des = atan2(path_pose[s_t].position.y - path_pose[s_t-0.1].position.y, path_pose[s_t].position.x - path_pose[s_t - 0.1].position.x);
+            double t =0.9;
+            double tmp_x = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+            double tmp_y = pow(1-t,3)*path_pose[start].position.y + 3*(1-t)*(1-t)*t*path_pose[start+1].position.y + 3*(1-t)*t*t*path_pose[start+2].position.y +t*t*t*path_pose[ending].position.y;
+            theta_des = atan2(y_des - tmp_y, x_des - tmp_x);
+            curvature = 0;
         }
         else
         {
-            theta_des = atan2(path_pose[s_t+0.1].position.y - path_pose[s_t].position.y, path_pose[s_t+0.1].position.x - path_pose[s_t].position.x);                       
+            if(s_t == 0.9)
+            {
+                double t = 1;
+                double tmp_x = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+                double tmp_y = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+                theta_des = atan2(y_des - tmp_y, x_des - tmp_x);
+                curvature = 0;
+            }
+            else
+            {
+                double t = s_t+0.1;
+                double tmp_x1 = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+                double tmp_y1 = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+                t = t + 0.2;
+                double tmp_x2 = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+                double tmp_y2 = pow(1-t,3)*path_pose[start].position.x + 3*(1-t)*(1-t)*t*path_pose[start+1].position.x + 3*(1-t)*t*t*path_pose[start+2].position.x +t*t*t*path_pose[ending].position.x;
+                theta_des = atan2(tmp_y1 - y_des,tmp_x1 - x_des);
+                double theta_tmp = atan2(tmp_y2 - tmp_y1,tmp_x2 - tmp_x1);
+                curvature = (theta_tmp - theta_des)/fabs(sqrt(pow(x_des,2)+pow(y_des,2)) - sqrt(pow(tmp_x1,2)+pow(tmp_y1,2)));
+            }                 
         }
     }
 
@@ -310,7 +364,7 @@ double BasierCurve()
         double y = 0;
         double s_d = MAXNUM;
         double s_t = 0;
-        for(int t =0; t<= 1;t+=0.1)
+        for(double t =0; t<= 1;t+=0.1)
         {
             x = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
             y = pow(1-t,4)*path_pose[start].position.y + 4*pow(1-t,3)*t*path_pose[start+1].position.y + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.y + 4*(1-t)*pow(t,3)*path_pose[start+3].position.y + pow(t,4)*path_pose[ending].position.y;
@@ -325,11 +379,34 @@ double BasierCurve()
         }
         if(s_t == 1)
         {
-            theta_des = atan2(path_pose[s_t].position.y - path_pose[s_t-0.1].position.y, path_pose[s_t].position.x - path_pose[s_t - 0.1].position.x);
+            double t =0.9;
+            double tmp_x = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+            double tmp_y = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+            theta_des = atan2(y_des - tmp_y, x_des - tmp_x);
+            curvature = 0;
         }
         else
         {
-            theta_des = atan2(path_pose[s_t+0.1].position.y - path_pose[s_t].position.y, path_pose[s_t+0.1].position.x - path_pose[s_t].position.x);                       
+            if(s_t == 0.9)
+            {
+                double t = 1;
+                double tmp_x = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+                double tmp_y = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+                theta_des = atan2(y_des - tmp_y, x_des - tmp_x);
+                curvature = 0;
+            }
+            else
+            {
+                double t = s_t+0.1;
+                double tmp_x1 = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+                double tmp_y1 = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+                t = t + 0.2;
+                double tmp_x2 = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+                double tmp_y2 = pow(1-t,4)*path_pose[start].position.x + 4*pow(1-t,3)*t*path_pose[start+1].position.x + 6*(1-t)*(1-t)*t*t*path_pose[start+2].position.x + 4*(1-t)*pow(t,3)*path_pose[start+3].position.x + pow(t,4)*path_pose[ending].position.x;
+                theta_des = atan2(tmp_y1 - y_des,tmp_x1 - x_des);
+                double theta_tmp = atan2(tmp_y2 - tmp_y1,tmp_x2 - tmp_x1);
+                curvature = (theta_tmp - theta_des)/fabs(sqrt(pow(x_des,2)+pow(y_des,2)) - sqrt(pow(tmp_x1,2)+pow(tmp_y1,2)));
+            }                       
         }
     }  
 }
@@ -337,7 +414,7 @@ double BasierCurve()
 //主函数
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "navigation_demo");
+    ros::init(argc, argv, "besier");
     ros::NodeHandle nh;
 
     ros::Rate loop_rate(5);  // 自循环频率
@@ -352,17 +429,21 @@ int main(int argc, char **argv)
     ROS_INFO("Start Besier!");
 
     while(ros::ok() && flag == true)
-    {
+    {   
+        ros::spinOnce();
+        
         CurveJudge();
         BasierCurve();
         homework::location location_data;
         location_data.x = x_des;
         location_data.y = y_des;
         location_data.theta = theta_des;
+        location_data.curvature = curvature;
 
         pub_data.publish(location_data);
 
         ros::spinOnce();
+        loop_rate.sleep();
     }
     return 0;
 }

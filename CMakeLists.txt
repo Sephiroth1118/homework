@@ -222,6 +222,9 @@ target_link_libraries(besier ${catkin_LIBRARIES})
 add_executable(MaptoOdom src/MaptoOdom.cpp)
 target_link_libraries(MaptoOdom ${catkin_LIBRARIES})
 
+add_executable(controller_curve src/controller_curve.cpp)
+target_link_libraries(controller_curve ${catkin_LIBRARIES})
+
 
 
 

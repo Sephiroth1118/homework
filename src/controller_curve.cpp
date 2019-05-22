@@ -26,26 +26,34 @@ ros::Subscriber sub_ctr_data;               //订阅控制输入
 ros::Subscriber sub_odom_data;              //订阅里程计消息
 ros::Publisher pub_twist_data;              //发布速度
 
-double cur_x;
-double cur_y;
-double cur_theta;
-double target_x;
-double target_y;
-double target_theta;
+double cur_x = 0;
+double cur_y = 0;
+double cur_theta = 0;
+double target_x = 0;
+double target_y = 0;
+double target_theta = 0;
 
 double dx;
 double dy;
 double dtheta;
 
-double v;
-double w;
+double v = 0;
+double w = 0;
 
-double k1;
-double k2;
+double k1 = 1;
+double k2 = 1;
 
-double e1;
-double e2;
-double e3;
+double e1 = 0;
+double e2 = 0;
+double e3 = 0;
+
+double target_curvature = 0;
+double vr = 0.1;
+double wr = vr * target_curvature;
+
+
+//计算出的应发布的速度
+geometry_msgs::Twist Vel;
 
 void InputCallback(const homework::location::ConstPtr& msg)
 {
@@ -53,6 +61,19 @@ void InputCallback(const homework::location::ConstPtr& msg)
     target_x = msg->x;
     target_y = msg->y;
     target_theta = msg->theta;
+    target_curvature = msg->curvature;
+}
+
+//将四元组转化为欧拉角
+double Trans(geometry_msgs::Pose a)
+{
+    double x = a.orientation.x;
+    double y = a.orientation.y;
+    double z = a.orientation.z;
+    double w = a.orientation.w;
+
+    double theta = atan2(2*(w*z+x*y),1-2*(y*y+z*z));
+    return theta;
 }
 
 void OdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -72,18 +93,6 @@ void OdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
     cur_theta = Trans(tmp);
 }
 
-//将四元组转化为欧拉角
-double Trans(geometry_msgs::Pose a)
-{
-    double x = a.orientation.x;
-    double y = a.orientation.y;
-    double z = a.orientation.z;
-    double w = a.orientation.w;
-
-    double theta = atan2(2*(w*z+x*y),1-2*(y*y+z*z));
-    return theta;
-}
-
 //计算位姿误差
 void cal_error()
 {
@@ -99,7 +108,8 @@ void cal_error()
 //计算速度发布
 void cal_vel()
 {
-
+    v = -k1*e1 + vr * cos(e3);
+    w = - wr * (sin(e3)/e3) *e2 - k2 * e3 + wr;
 }
 
 int main(int argc, char **argv)
@@ -118,6 +128,12 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
         ros::spinOnce();
+
+        Vel.linear.y = v;
+        Vel.angular.z = w;
+
+        pub_twist_data.publish(Vel);
+
         loop_rate.sleep();
     }
 }
