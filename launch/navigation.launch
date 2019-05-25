@@ -22,7 +22,7 @@
   <arg name="initial_pose_y" default="0.0"/> 
   <arg name="initial_pose_a" default="0.0"/>
 
-  <include file="$(find homework)/launch/includes/amcl/amcl_diff.launch" />
+  <include file="$(find homework)/launch/includes/amcl/amcl.launch.xml" />
 
   <!-- 加载move_base -->
   <include file="$(find homework)/launch/includes/move_base.launch.xml"/>

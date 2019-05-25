@@ -32,14 +32,14 @@ void init()
 void TwistCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
     //线速度
-    twist.linear.x = msg->linear.x/1.2;
-    twist.linear.y = msg->linear.y/1.2;
-    twist.linear.z = msg->linear.z/1.2;
+    twist.linear.x = msg->linear.x/2.5;
+    twist.linear.y = msg->linear.y/2.5;
+    twist.linear.z = msg->linear.z/2.5;
 
     //角速度
-    twist.angular.x = msg->angular.x/1.2;
-    twist.angular.y = msg->angular.y/1.2;
-    twist.angular.z = msg->angular.z/1.2;
+    twist.angular.x = msg->angular.x/2.5;
+    twist.angular.y = msg->angular.y/2.5;
+    twist.angular.z = msg->angular.z/2.5;
 }
 
 int main(int argc, char **argv)
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     pub_twist = nh.advertise<geometry_msgs::Twist>("/ctrl_cmd_vel", 10);
 
     init();
-    ros::Rate loop_rate(3);
+    ros::Rate loop_rate(2);
     while(ros::ok())
     {
          //发布速度
