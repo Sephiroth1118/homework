@@ -50,13 +50,13 @@ double curvature = 0;
 
 //定义发布器和订阅器
 ros::Publisher pub_data;    //发布生成的贝塞尔曲线中的数据
-ros::Subscriber sub_data;   //订阅地图中的原始数据
-ros::Subscriber sub_odm_data;    //订阅里程计消息
+//ros::Subscriber sub_data;   //订阅地图中的原始数据
+//ros::Subscriber sub_odm_data;    //订阅里程计消息
 
 bool flag = false;              //只有收到地图消息后才进入ros循环
 
 //订阅tf变换
-tf::TransformListener listener;
+//tf::TransformListener listener;
 
 //初始化坐标点位置
 void init()
@@ -79,6 +79,7 @@ void init()
 }
 
 //坐标变换函数
+/*
 void transformPoint(const tf::TransformListener& listener, geometry_msgs::Pose a, geometry_msgs::Pose b)
 {
     geometry_msgs::PointStamped map_point;
@@ -111,27 +112,35 @@ void transformPoint(const tf::TransformListener& listener, geometry_msgs::Pose a
     b.position.y = base_point.point.y;
     b.position.z = base_point.point.z;
 }
-
+*/
 //存储地图数据
 //@TODO map->odom坐标变换
-void mapCallback(const homework::path::ConstPtr& msg)
+void MapCallback(const homework::path::ConstPtr& msg)
 {
-    for(int i = 0; i <msg->path.size(); i += 10)
+    cout<<"size: "<<msg->path.size()<<endl;
+    path_pose.clear();
+    for(int i = 0; i <msg->path.size(); i++)
     {   
-        geometry_msgs::Pose tmp;
-        transformPoint(listener, msg->path[i], tmp);
-        path_pose.push_back(tmp);
+        //geometry_msgs::Pose tmp;
+        //transformPoint(listener, msg->path[i], tmp);
+        //path_pose.push_back(tmp);
+        path_pose.push_back(msg->path[i]);
+        cout<<"x: "<<path_pose[i].position.x<<endl;
+        cout<<"y: "<<path_pose[i].position.y<<endl;
+        
     }
 
-    geometry_msgs::Pose tmp;
-    transformPoint(listener, msg->path[msg->path.size()-1], tmp);
-    path_pose.push_back(tmp);
+    //geometry_msgs::Pose tmp;
+    //transformPoint(listener, msg->path[msg->path.size()-1], tmp);
+    path_pose.push_back(msg->path[msg->path.size()]);
+    
 
+    ROS_INFO("Points rececived!");
     flag = true;
 }
 
 //更新机器人当前位置坐标
-void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+void OdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
     //@TODO
     cur_pose.position.x = msg->pose.pose.position.x;
@@ -190,6 +199,7 @@ void CurveJudge()
     }
 
     number = SmlNumber(Distance) + 1;
+    //cout<<"number: "<<number<<endl;
     int mul = number/(step+1);
     int rem = number%(step+1);
     
@@ -202,6 +212,11 @@ void CurveJudge()
     {
         ending = start + step;
     }
+
+    //cout<<"start: "<<start<<"-----path.x:"<<path_pose[start].position.x<<endl;
+    //cout<<"start: "<<start<<"-----path.y:"<<path_pose[start].position.y<<endl;
+
+    //cout<<"ending: "<<ending<<endl;
 }
 
 //将四元组转化为笛卡尔坐标系下的角度
@@ -377,6 +392,9 @@ double BasierCurve()
                 s_d = distance;
             }
         }
+        //cout<<"x: "<<x_des<<endl;
+        //cout<<"y: "<<y_des<<endl;
+        //cout<<"dis: "<<s_d<<endl;
         if(s_t == 1)
         {
             double t =0.9;
@@ -421,29 +439,31 @@ int main(int argc, char **argv)
 
     //声明发布器和订阅器
     pub_data = nh.advertise<homework::location>("/besier_to_controller",1);
-    sub_data = nh.subscribe("/raw_map_data", 1, mapCallback);
-    sub_odm_data = nh.subscribe("/sensor_fusions/odom", 1 , odomCallback);
+    ros::Subscriber sub_data = nh.subscribe("/odom_plan",1,MapCallback);
+    ros::Subscriber sub_odm_data = nh.subscribe("/sensors_fusion/odom",1,OdomCallback);
 
     init();
 
     ROS_INFO("Start Besier!");
 
-    while(ros::ok() && flag == true)
+    while(ros::ok())
     {   
         ros::spinOnce();
-        
-        CurveJudge();
-        BasierCurve();
-        homework::location location_data;
-        location_data.x = x_des;
-        location_data.y = y_des;
-        location_data.theta = theta_des;
-        location_data.curvature = curvature;
+        if(flag == true)
+        {
+            CurveJudge();
+            BasierCurve();
+            homework::location location_data;
+            location_data.x = x_des;
+            location_data.y = y_des;
+            location_data.theta = theta_des;
+            location_data.curvature = curvature;
 
-        pub_data.publish(location_data);
+            pub_data.publish(location_data);
 
-        ros::spinOnce();
-        loop_rate.sleep();
+            ros::spinOnce();
+            loop_rate.sleep();
+        }
     }
     return 0;
 }

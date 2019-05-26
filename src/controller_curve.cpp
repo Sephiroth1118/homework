@@ -40,8 +40,8 @@ double dtheta;
 double v = 0;
 double w = 0;
 
-double k1 = 1;
-double k2 = 1;
+double k1 = 2;
+double k2 = 2;
 
 double e1 = 0;
 double e2 = 0;
@@ -75,6 +75,8 @@ void InputCallback(const homework::location::ConstPtr& msg)
     target_y = msg->y;
     target_theta = msg->theta;
     target_curvature = msg->curvature;
+    cout<<"target_x: "<<target_x<<endl;
+    cout<<"target_y: "<<target_y<<endl;
 }
 
 //将四元组转化为欧拉角
@@ -116,6 +118,9 @@ void cal_error()
     e1 = cos(cur_theta)*dx + sin(cur_theta)*dy;
     e2 = -sin(cur_theta)*dx + cos(cur_theta)*dy;
     e3 = dtheta;
+    cout<<"dx: "<<dx<<endl;
+    cout<<"dy: "<<dy<<endl;
+    cout<<"dtheta: "<<dtheta<<endl;
 }
 
 //计算速度发布
@@ -132,9 +137,9 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(5);  // 自循环频率
 
-    pub_twist_data = nh.advertise<geometry_msgs::Twist>("/ctr_cmd_vel", 1);
+    pub_twist_data = nh.advertise<geometry_msgs::Twist>("/ctrl_cmd_vel", 1);
     sub_ctr_data = nh.subscribe("/besier_to_controller", 1, InputCallback);
-    sub_odom_data = nh.subscribe("sensor_fusions/odom", 1 , OdomCallback);
+    sub_odom_data = nh.subscribe("sensors_fusion/odom", 1 , OdomCallback);
 
     ROS_INFO("Start controlling!");
 

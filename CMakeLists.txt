@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   tf
 )
-
+find_package(OpenCV REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -224,6 +224,24 @@ target_link_libraries(MaptoOdom ${catkin_LIBRARIES})
 
 add_executable(controller_curve src/controller_curve.cpp)
 target_link_libraries(controller_curve ${catkin_LIBRARIES})
+
+add_executable(A_Star src/A_Star.cpp)
+target_link_libraries(A_Star ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+#add_dependencies(A_Star ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
+add_executable(Controller src/Controller.cpp)
+target_link_libraries(Controller ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+#add_dependencies(Controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
+
+
+
+
+
+
+
+
+
 
 
 

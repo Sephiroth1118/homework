@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "retainer");
     ros::NodeHandle nh;
-    sub_twist = nh.subscribe("/Middle_twist", 1, TwistCallback);
+    sub_twist = nh.subscribe("/Middle_twist", 10, TwistCallback);
     pub_twist = nh.advertise<geometry_msgs::Twist>("/ctrl_cmd_vel", 10);
 
     init();

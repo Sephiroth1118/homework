@@ -1,0 +1,28 @@
+<launch>
+  <!-- 唤醒turtlebot -->
+  <!--<include file="$(find turtlebot_gazebo)/launch/turtlebot_world.launch" />-->
+  
+ <!--<include file="$(find turtlebot_teleop)/launch/keyboard_teleop.launch" />-->
+  
+  <!-- 加载地图 -->
+  <arg name="map_file" default="/home/kamerider/catkin_ws/src/homework/maps/my_map.yaml" /> 
+  <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" />
+    
+  
+  <!--<include file="/home/kamerider/catkin_ws/src/turtlebot_apps/turtlebot_navigation/launch/includes/amcl/amcl.launch.xml"/>-->
+  <include file="$(find homework)/launch/includes/amcl/amcl.launch.xml" />
+
+  
+
+  <!-- 3D visualization -->
+  <!-- Rviz -->
+  <include file="$(find turtlebot_rviz_launchers)/launch/view_navigation.launch"/>
+ 
+  <!-- 加载C++节点 -->
+
+  <node pkg="homework" type="A_Star" name="A_Star" respawn="true" output="screen" />
+  <node pkg="homework" type="MaptoOdom" name="MaptoOdom" respawn="true" launch-prefix="xterm -e" />
+  <!--<node pkg="homework" type="besier" name="besier" output="screen" launch-prefix="xterm -e" />
+  <node pkg="homework" type="controller_curve" name="controller_curve" output="screen" launch-prefix="xterm -e" />-->
+</launch>
+
