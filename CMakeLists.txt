@@ -233,6 +233,11 @@ add_executable(Controller src/Controller.cpp)
 target_link_libraries(Controller ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 #add_dependencies(Controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
+add_executable(path_planning src/path_planning.cpp)
+target_link_libraries(path_planning ${catkin_LIBRARIES})
+
+add_executable(A_Star_withoutdilate src/A_Star_withoutdilate.cpp)
+target_link_libraries(A_Star_withoutdilate ${catkin_LIBRARIES})
 
 
 

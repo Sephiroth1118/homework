@@ -202,7 +202,6 @@ int main(int argc, char **argv)
             mess.y = des_y;
             mess.theta = des_theta;
             mess.curvature = 0.0;
-            pub_data.publish(mess);
         }
         ros::spinOnce();
         loop_rate.sleep();

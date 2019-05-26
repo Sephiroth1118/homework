@@ -26,12 +26,12 @@ ros::Subscriber sub_ctr_data;               //订阅控制输入
 ros::Subscriber sub_odom_data;              //订阅里程计消息
 ros::Publisher pub_twist_data;              //发布速度
 
-double cur_x = 0;
-double cur_y = 0;
-double cur_theta = 0;
-double target_x = 0;
-double target_y = 0;
-double target_theta = 0;
+double cur_x ;
+double cur_y ;
+double cur_theta ;
+double target_x ;
+double target_y ;
+double target_theta ;
 
 double dx;
 double dy;
@@ -48,7 +48,7 @@ double e2 = 0;
 double e3 = 0;
 
 double target_curvature = 0;
-double vr = 0.1;
+double vr = 0.01;
 double wr = vr * target_curvature;
 
 
@@ -126,8 +126,13 @@ void cal_error()
 //计算速度发布
 void cal_vel()
 {
-    v = -k1*e1 + vr * cos(e3);
-    w = - wr * (sin(e3)/e3) *e2 - k2 * e3 + wr;
+    double t = 0.1;
+    //v = -k1*e1 + vr * cos(e3);
+    //cout<<"v: "<<v<<endl;
+    //cout<<"w: "<<w<<endl;
+    //w = - wr * (sin(e3)/e3) *e2 - k2 * e3 + wr;
+    v = -k1 * e1;
+    w = -k2 * e3 + e2 * e2 * sin(t);
 }
 
 int main(int argc, char **argv)
@@ -148,6 +153,9 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
         ros::spinOnce();
+
+        cal_error();
+        cal_vel();
 
         Vel.linear.x = v;
         Vel.angular.z = w;

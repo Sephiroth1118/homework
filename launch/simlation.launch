@@ -22,7 +22,7 @@
 
   <node pkg="homework" type="A_Star" name="A_Star" respawn="true" output="screen" />
   <node pkg="homework" type="MaptoOdom" name="MaptoOdom" respawn="true" launch-prefix="xterm -e" />
-  <!--<node pkg="homework" type="besier" name="besier" output="screen" launch-prefix="xterm -e" />
-  <node pkg="homework" type="controller_curve" name="controller_curve" output="screen" launch-prefix="xterm -e" />-->
+  <node pkg="homework" type="besier" name="besier" output="screen" launch-prefix="xterm -e" />
+  <node pkg="homework" type="controller_curve" name="controller_curve" output="screen" launch-prefix="xterm -e" />
 </launch>
 

@@ -14,8 +14,10 @@
   </include>
   -->
   <!-- 加载地图 -->
+  <!--
   <arg name="map_file" default="$(find homework)/maps/my_map.yaml" /> 
   <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" />
+  -->
     
   <!-- 设置amcl-->
   <arg name="initial_pose_x" default="0.0"/> <!-- 设置初始坐标 -->
